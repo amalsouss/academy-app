@@ -1,7 +1,7 @@
 flask
 reportlab
 arabic-reshaper
-python-bidi
+ppython-bidi==0.4.2
 num2words
 qrcode
 pillow

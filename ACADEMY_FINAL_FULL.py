@@ -1,4 +1,4 @@
-# FINAL SYSTEM - PDF + WHATSAPP (ONLINE READY)
+# FINAL PRO ONLINE VERSION (FIXED IMAGES + WHATSAPP)
 
 from flask import Flask, render_template_string, request, send_file, redirect
 from reportlab.platypus import *
@@ -15,11 +15,16 @@ import qrcode
 
 app = Flask(__name__)
 
-# 🔥 رابط Render ديالك
+# 🔥 رابط الموقع ديالك
 BASE_URL = "https://academy-app-lco1.onrender.com"
 
-FONT_PATH = "Amiri-Regular.ttf"
-LOGO_PATH = "logo_circle.png"
+# 🔥 حل مشكل الصور
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+FONT_PATH = os.path.join(BASE_DIR, "Amiri-Regular.ttf")
+LOGO_PATH = os.path.join(BASE_DIR, "logo_circle.png")
+SIGN_PATH = os.path.join(BASE_DIR, "signature.png")
+STAMP_PATH = os.path.join(BASE_DIR, "stamp.png")
 
 if os.path.exists(FONT_PATH):
     pdfmetrics.registerFont(TTFont('Arabic', FONT_PATH))
@@ -36,8 +41,8 @@ def get_receipt_number():
     return n
 
 def generate_qr(data):
-    file="qr.png"
-    img=qrcode.make(data)
+    file = "qr.png"
+    img = qrcode.make(data)
     img.save(file)
     return file
 
@@ -72,8 +77,8 @@ def create_pdf(name, amount, date, month, note):
 
     content = []
 
+    # 🟢 HEADER
     logo = Image(LOGO_PATH, 50, 50) if os.path.exists(LOGO_PATH) else ""
-
     header = [["", Paragraph(fix_ar("أكاديمية أمل سوس لكرة القدم"), title), logo]]
     content.append(Table(header, colWidths=[60, 200, 60]))
 
@@ -81,13 +86,18 @@ def create_pdf(name, amount, date, month, note):
     content.append(Paragraph("Académie Amal Souss de Football", subtitle))
     content.append(Spacer(1,12))
 
-    content.append(Table([[""]], colWidths=[260], style=[('LINEBELOW', (0,0), (-1,-1), 1.5, BLUE)]))
+    content.append(Table([[""]], colWidths=[260], style=[
+        ('LINEBELOW', (0,0), (-1,-1), 1.5, BLUE)
+    ]))
+
     content.append(Spacer(1,10))
 
+    # 🟢 INFO
     content.append(Paragraph(fix_ar(f"وصل أداء رقم: {num}"), normal))
     content.append(Paragraph(fix_ar(f"التاريخ: {date}"), normal))
     content.append(Spacer(1,15))
 
+    # 🟢 TABLE
     amount_words = num2words(int(amount), lang='ar')
 
     data = [
@@ -111,6 +121,7 @@ def create_pdf(name, amount, date, month, note):
     content.append(table)
     content.append(Spacer(1,20))
 
+    # 🟢 QR
     filename = file.split("/")[-1]
     link = f"{BASE_URL}/receipt/{filename}"
 
@@ -118,13 +129,18 @@ def create_pdf(name, amount, date, month, note):
     content.append(Image(qr, 70, 70))
     content.append(Spacer(1,20))
 
-    sig = Image("signature.png", 90, 40) if os.path.exists("signature.png") else ""
-    stamp = Image("stamp.png", 80, 80) if os.path.exists("stamp.png") else ""
+    # 🟢 SIGNATURE + STAMP
+    sig = Image(SIGN_PATH, 90, 40) if os.path.exists(SIGN_PATH) else ""
+    stamp = Image(STAMP_PATH, 80, 80) if os.path.exists(STAMP_PATH) else ""
 
     content.append(Table([[sig, stamp]], colWidths=[130,130]))
     content.append(Spacer(1,10))
 
-    content.append(Table([[""]], colWidths=[260], style=[('LINEABOVE', (0,0), (-1,-1), 1.5, GREEN)]))
+    # 🟢 FOOTER
+    content.append(Table([[""]], colWidths=[260], style=[
+        ('LINEABOVE', (0,0), (-1,-1), 1.5, GREEN)
+    ]))
+
     content.append(Spacer(1,8))
 
     content.append(Paragraph(fix_ar("أكاديمية أمل سوس لكرة القدم"), center))
@@ -188,11 +204,11 @@ def home():
             return send_file(pdf, as_attachment=True)
         else:
             link = f"{BASE_URL}/receipt/{filename}"
-            msg = f"وصل الأداء:\nالاسم: {name}\nالمبلغ: {amount} درهم\n{link}"
+            msg = f"وصل الأداء:\\nالاسم: {name}\\nالمبلغ: {amount} درهم\\n{link}"
             url = "https://wa.me/?text=" + urllib.parse.quote(msg)
             return redirect(url)
 
     return render_template_string(HTML, date=datetime.date.today())
 
-if __name__=="__main__":
+if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5001)

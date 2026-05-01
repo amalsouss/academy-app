@@ -1,4 +1,4 @@
-# FINAL SYSTEM - PDF + WHATSAPP (FULL VERSION)
+# FINAL SYSTEM - PDF + WHATSAPP (ONLINE READY)
 
 from flask import Flask, render_template_string, request, send_file, redirect
 from reportlab.platypus import *
@@ -14,6 +14,9 @@ from num2words import num2words
 import qrcode
 
 app = Flask(__name__)
+
+# 🔥 رابط Render ديالك
+BASE_URL = "https://academy-app-lco1.onrender.com"
 
 FONT_PATH = "Amiri-Regular.ttf"
 LOGO_PATH = "logo_circle.png"
@@ -109,7 +112,7 @@ def create_pdf(name, amount, date, month, note):
     content.append(Spacer(1,20))
 
     filename = file.split("/")[-1]
-    link = f"https://academy-app-lco1.onrender.com/receipt/{filename}"
+    link = f"{BASE_URL}/receipt/{filename}"
 
     qr = generate_qr(link)
     content.append(Image(qr, 70, 70))
@@ -184,7 +187,7 @@ def home():
         if request.form["action"] == "pdf":
             return send_file(pdf, as_attachment=True)
         else:
-            link = f"http://127.0.0.1:5001/receipt/{filename}"
+            link = f"{BASE_URL}/receipt/{filename}"
             msg = f"وصل الأداء:\nالاسم: {name}\nالمبلغ: {amount} درهم\n{link}"
             url = "https://wa.me/?text=" + urllib.parse.quote(msg)
             return redirect(url)

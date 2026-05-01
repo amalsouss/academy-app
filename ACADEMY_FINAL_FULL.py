@@ -109,7 +109,7 @@ def create_pdf(name, amount, date, month, note):
     content.append(Spacer(1,20))
 
     filename = file.split("/")[-1]
-    link = f"http://127.0.0.1:5001/receipt/{filename}"
+    link = f"https://academy-app-lco1.onrender.com/receipt/{filename}"
 
     qr = generate_qr(link)
     content.append(Image(qr, 70, 70))

@@ -145,7 +145,7 @@ def create_pdf(name, amount, date, month, note):
 
     content.append(Paragraph(fix_ar("أكاديمية أمل سوس لكرة القدم"), center))
     content.append(Paragraph(fix_ar("المقر: شارع الادارسة زنقة 3101 رقم 76 الدشيرة الجهادية"), center))
-    content.append(Paragraph(fix_ar("الهاتف: 06 31 61 66 67 / 06 87 89 51 63"), center))
+    content.append(Paragraph(fix_ar("TEL: 06 31 61 66 67 / 06 87 89 51 63"), center))
 
     doc.build(content, onFirstPage=draw_border, onLaterPages=draw_border)
 

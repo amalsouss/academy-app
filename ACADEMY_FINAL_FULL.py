@@ -1,5 +1,3 @@
-# FINAL PRO ONLINE VERSION (FIXED IMAGES + WHATSAPP)
-
 from flask import Flask, render_template_string, request, send_file, redirect
 from reportlab.platypus import *
 from reportlab.lib import colors
@@ -15,10 +13,8 @@ import qrcode
 
 app = Flask(__name__)
 
-# 🔥 رابط الموقع ديالك
 BASE_URL = "https://academy-app-lco1.onrender.com"
 
-# 🔥 حل مشكل الصور
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 FONT_PATH = os.path.join(BASE_DIR, "Amiri-Regular.ttf")
@@ -32,16 +28,8 @@ if os.path.exists(FONT_PATH):
 def fix_ar(text):
     return get_display(arabic_reshaper.reshape(text))
 
-def get_receipt_number():
-    if not os.path.exists("counter.txt"):
-        open("counter.txt","w").write("1")
-        return 1
-    n=int(open("counter.txt").read())
-    open("counter.txt","w").write(str(n+1))
-    return n
-
 def generate_qr(data):
-    file = "qr.png"
+    file = f"qr_{datetime.datetime.now().timestamp()}.png"
     img = qrcode.make(data)
     img.save(file)
     return file
@@ -53,18 +41,16 @@ def draw_border(canvas, doc):
     canvas.setLineWidth(1)
     canvas.rect(15, 15, width-30, height-30)
 
-def create_pdf(name, amount, date, month, note):
+def create_pdf(receipt_number, name, amount, date, month, note):
 
     BLUE = colors.HexColor("#0A5F9E")
     GREEN = colors.HexColor("#00C853")
-
-    num = get_receipt_number()
 
     folder = "receipts"
     if not os.path.exists(folder):
         os.makedirs(folder)
 
-    file = f"{folder}/facture_{num}.pdf"
+    file = f"{folder}/facture_{receipt_number}.pdf"
 
     doc = SimpleDocTemplate(file, pagesize=A5,
                             rightMargin=25, leftMargin=25,
@@ -77,7 +63,7 @@ def create_pdf(name, amount, date, month, note):
 
     content = []
 
-    # 🟢 HEADER
+    # HEADER
     logo = Image(LOGO_PATH, 50, 50) if os.path.exists(LOGO_PATH) else ""
     header = [["", Paragraph(fix_ar("أكاديمية أمل سوس لكرة القدم"), title), logo]]
     content.append(Table(header, colWidths=[60, 200, 60]))
@@ -92,12 +78,12 @@ def create_pdf(name, amount, date, month, note):
 
     content.append(Spacer(1,10))
 
-    # 🟢 INFO
-    content.append(Paragraph(fix_ar(f"وصل أداء رقم: {num}"), normal))
+    # INFO
+    content.append(Paragraph(fix_ar(f"وصل أداء رقم: {receipt_number}"), normal))
     content.append(Paragraph(fix_ar(f"التاريخ: {date}"), normal))
     content.append(Spacer(1,15))
 
-    # 🟢 TABLE
+    # TABLE
     amount_words = num2words(int(amount), lang='ar')
 
     data = [
@@ -121,7 +107,7 @@ def create_pdf(name, amount, date, month, note):
     content.append(table)
     content.append(Spacer(1,20))
 
-    # 🟢 QR
+    # QR
     filename = file.split("/")[-1]
     link = f"{BASE_URL}/receipt/{filename}"
 
@@ -129,14 +115,14 @@ def create_pdf(name, amount, date, month, note):
     content.append(Image(qr, 70, 70))
     content.append(Spacer(1,20))
 
-    # 🟢 SIGNATURE + STAMP
+    # SIGNATURE + STAMP
     sig = Image(SIGN_PATH, 90, 40) if os.path.exists(SIGN_PATH) else ""
     stamp = Image(STAMP_PATH, 80, 80) if os.path.exists(STAMP_PATH) else ""
 
     content.append(Table([[sig, stamp]], colWidths=[130,130]))
     content.append(Spacer(1,10))
 
-    # 🟢 FOOTER
+    # FOOTER
     content.append(Table([[""]], colWidths=[260], style=[
         ('LINEABOVE', (0,0), (-1,-1), 1.5, GREEN)
     ]))
@@ -161,6 +147,7 @@ HTML = '''
 <h3>📄 وصل الأداء</h3>
 
 <form method="POST">
+<input name="receipt_number" placeholder="رقم الوصل" required><br>
 <input name="name" placeholder="الاسم الكامل" required><br>
 <input name="amount" placeholder="المبلغ" required><br>
 <input name="date" value="{{date}}" required><br>
@@ -191,20 +178,21 @@ HTML = '''
 @app.route("/", methods=["GET","POST"])
 def home():
     if request.method=="POST":
+        receipt_number = request.form["receipt_number"]
         name = request.form["name"]
         amount = request.form["amount"]
         date = request.form["date"]
         month = request.form["month"]
         note = request.form["note_custom"] if request.form["note_custom"] else request.form["note"]
 
-        pdf = create_pdf(name, amount, date, month, note)
+        pdf = create_pdf(receipt_number, name, amount, date, month, note)
         filename = pdf.split("/")[-1]
 
         if request.form["action"] == "pdf":
             return send_file(pdf, as_attachment=True)
         else:
             link = f"{BASE_URL}/receipt/{filename}"
-            msg = f"وصل الأداء:\\nالاسم: {name}\\nالمبلغ: {amount} درهم\\n{link}"
+            msg = f"وصل الأداء:\\nرقم: {receipt_number}\\nالاسم: {name}\\nالمبلغ: {amount} درهم\\n{link}"
             url = "https://wa.me/?text=" + urllib.parse.quote(msg)
             return redirect(url)
 
